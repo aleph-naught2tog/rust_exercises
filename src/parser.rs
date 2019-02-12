@@ -5,22 +5,23 @@ type Threeple = [Vec<char>; 3];
 pub fn parse_rgb(maybe_color: &mut str) -> Result<Threeple, &'static str> {
   match trim_rgb(maybe_color) {
     Ok((_, rgb)) => get_terms(rgb),
-    Err(message) => return Err(message),
+    Err(message) => Err(message),
   }
 }
 
 fn check_parentheses(maybe_color: &str) -> Result<(), &'static str> {
+  let open_index = 0;
   let last_index = maybe_color.len() - 1;
-  let open_index = 4;
   let opening_paren_index = maybe_color.find('(');
   let closing_paren_index = maybe_color.find(')');
 
   match (opening_paren_index, closing_paren_index) {
-    (Some(open_index), Some(last_index)) => Ok(()),
-    (Some(open_index), Some(index)) if (last_index != index) => Err("Closing paren in wrong place"),
-    (Some(_), None) => Err("No closing paren found"),
+    (None, None) => Err("No parentheses found"),
     (None, _) => Err("No opening paren found"),
-    (Some(_), Some(last_index)) => Err("Opening paren in wrong place"),
+    (_, None) => Err("No closing paren found"),
+    (_, Some(index)) if (index != last_index) => Err("Closing paren in wrong place"),
+    (Some(index), _) if (index != open_index) => Err("Opening paren in wrong place"),
+    (_, _) => Ok(()),
   }
 }
 
@@ -72,9 +73,17 @@ mod tests {
   use super::trim_rgb;
 
   #[test]
-  fn trim_rgb_works() {
+  fn trim_rgb_doesnt_fail() {
     let sample = r"rgb(23,44,123)";
     let result = trim_rgb(sample);
-    assert!(result.is_ok())
+    assert!(result.is_ok());
+  }
+
+  #[test]
+  fn trim_rgb_hasrgb() {
+    let sample = r"rgb(23,44,123)";
+    let result = trim_rgb(sample);
+    let (hopefully_rgb, _) = result.unwrap();
+    assert_eq!(hopefully_rgb, "rgb");
   }
 }
